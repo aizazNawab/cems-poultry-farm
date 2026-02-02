@@ -5,21 +5,27 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// PIN Routes
+const pinRoutes = require('./routes/pin');
+
+// Middleware - Updated CORS for production
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 
-// MongoDB Connection with autoIndex disabled
+// MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI, {
-  autoIndex: false  // Disable automatic index creation to prevent duplicates
+  autoIndex: false
 })
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// Routes with error handling
+// PIN route
+app.use('/api', pinRoutes);
+
+// Existing routes
 app.use('/api/customers', (req, res, next) => {
   console.log('📍 Customer route hit:', req.method, req.path);
   next();
@@ -38,12 +44,12 @@ app.use('/api/transactions', (req, res, next) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ ERROR:', err);
-  res.status(500).json({ message: err.message, stack: err.stack });
+  res.status(500).json({ message: err.message });
 });
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'CEMS Poultry Farm API Running' });
+  res.json({ status: 'OK', message: 'Qaiser Ali Poultry Farm API Running' });
 });
 
 const PORT = process.env.PORT || 5000;

@@ -28,6 +28,9 @@ export const findEntry = (truckNumber) => {
   });
 };
 
+export const verifyPin = (pin) =>
+  axios.post(`${API_URL}/verify-pin`, { pin });
+
 export const createEntry = (data) => {
   return axios.post(`${API_URL}/entries`, data);
 };

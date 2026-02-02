@@ -10,11 +10,35 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [pinLoading, setPinLoading] = useState(false);
+
+  const verifyPin = async () => {
+    if (!pin) {
+      setPinError('Please enter PIN');
+      return;
+    }
+
+    setPinLoading(true);
+    setPinError('');
+
+    try {
+      await api.verifyPin(pin);
+      setIsUnlocked(true);
+    } catch (err) {
+      setPinError('❌ Wrong PIN');
+    }
+
+    setPinLoading(false);
+  };
 
   // Search states
   const [pendingSearch, setPendingSearch] = useState('');
   const [completedSearch, setCompletedSearch] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [showBalanceOnly, setShowBalanceOnly] = useState(false);
 
   // Selected customer for details modal
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -101,12 +125,13 @@ function App() {
       trans.contactNumber.includes(completedSearch) ||
       trans.entryNumber.includes(completedSearch)
     )
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort newest first
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const filteredCustomers = customers.filter(cust => 
-    cust.truckNumber.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    (cust.truckNumber.toLowerCase().includes(customerSearch.toLowerCase()) ||
     cust.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    cust.contactNumber.includes(customerSearch)
+    cust.contactNumber.includes(customerSearch)) &&
+    (!showBalanceOnly || (cust.balance !== 0 && cust.balance != null))
   );
 
   // Entry handlers
@@ -128,7 +153,6 @@ function App() {
           truckNumber: customer.truckNumber,
           contactNumber: customer.contactNumber
         }));
-        // Removed success alert - details show in blue box automatically
       } else {
         alert('❌ Customer not found with this truck number!');
         setExistingCustomerData(null);
@@ -153,7 +177,6 @@ function App() {
         customerType: customerType
       });
       
-      // Ask if user wants to print receipt
       if (window.confirm('Entry saved successfully!\n\nDo you want to print the receipt?')) {
         printEntryReceipt(response.data);
       }
@@ -209,8 +232,6 @@ function App() {
           advancePaid: entry.advancePayment || '0',
           oldBalance: customer?.balance || '0'
         }));
-        
-        // Removed success alert - details show in info box automatically
       } else {
         alert('❌ No pending entry found for this truck number!');
         setSelectedEntry(null);
@@ -268,7 +289,6 @@ function App() {
         exitTime: exitForm.exitTime
       });
       
-      // Ask if user wants to print invoice
       if (window.confirm('Exit completed successfully!\n\nDo you want to print the invoice?')) {
         printInvoice(response.data);
       }
@@ -331,7 +351,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">CEMS</div>
+            <div class="logo">Qaiser Ali</div>
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">SALE INVOICE - Driver Copy</div>
@@ -389,7 +409,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">CEMS</div>
+            <div class="logo">Qaiser Ali</div>
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">ENTRY RECEIPT - Driver Copy</div>
@@ -437,10 +457,79 @@ function App() {
     }
   };
 
+  // ✅ PIN LOCK SCREEN — renders BEFORE the main app if not unlocked
+  if (!isUnlocked) {
+    return (
+      <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#1e293b' }}>
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '16px',
+          padding: '40px 30px',
+          width: '100%',
+          maxWidth: '360px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '10px' }}>🐔</div>
+          <h2 style={{ margin: '0 0 4px', color: '#1e293b' }}>Qaiser Ali</h2>
+          <p style={{ margin: '0 0 30px', color: '#64748b', fontSize: '14px' }}>پولٹری فارم مینجمنٹ سسٹم</p>
+
+          <div style={{ fontSize: '36px', marginBottom: '20px' }}>🔒</div>
+          <p style={{ color: '#475569', marginBottom: '16px', fontWeight: '600' }}>Enter PIN to unlock</p>
+
+          <input
+            type="password"
+            inputMode="numeric"
+            placeholder="••••"
+            value={pin}
+            onChange={(e) => { setPin(e.target.value); setPinError(''); }}
+            onKeyDown={(e) => e.key === 'Enter' && verifyPin()}
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '14px',
+              fontSize: '28px',
+              letterSpacing: '12px',
+              textAlign: 'center',
+              border: pinError ? '2px solid #dc2626' : '2px solid #e2e8f0',
+              borderRadius: '10px',
+              outline: 'none',
+              boxSizing: 'border-box',
+              marginBottom: '8px'
+            }}
+          />
+
+          {pinError && <p style={{ color: '#dc2626', margin: '0 0 12px', fontSize: '14px', fontWeight: '600' }}>{pinError}</p>}
+          {!pinError && <div style={{ height: '20px' }}></div>}
+
+          <button
+            onClick={verifyPin}
+            disabled={pinLoading || !pin}
+            style={{
+              width: '100%',
+              padding: '14px',
+              backgroundColor: pinLoading || !pin ? '#94a3b8' : '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: pinLoading || !pin ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s'
+            }}
+          >
+            {pinLoading ? 'Verifying...' : 'Unlock / کھولیں'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ MAIN APP — only renders after PIN is verified
   return (
     <div className="app">
       <div className="header">
-        <h1>🐔 CEMS Poultry Farm Management System</h1>
+        <h1>🐔 Qaiser Ali Poultry Farm Management System</h1>
         <p>پولٹری فارم مینجمنٹ سسٹم</p>
       </div>
 
@@ -812,12 +901,36 @@ function App() {
                 style={{
                   width: '100%',
                   padding: '12px',
-                  marginBottom: '20px',
+                  marginBottom: '12px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
                   fontSize: '16px'
                 }}
               />
+
+              <button
+                onClick={() => setShowBalanceOnly(!showBalanceOnly)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  marginBottom: '20px',
+                  backgroundColor: showBalanceOnly ? '#dc2626' : '#f3f4f6',
+                  color: showBalanceOnly ? 'white' : '#374151',
+                  border: showBalanceOnly ? 'none' : '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                💰 {showBalanceOnly ? 'Balance Customers ✓' : 'Balance Customers'}
+                {showBalanceOnly && <span style={{ fontSize: '13px', fontWeight: 'normal', opacity: 0.85 }}>({filteredCustomers.length})</span>}
+              </button>
 
               {filteredCustomers.length === 0 ? (
                 <p style={{ textAlign: 'center', color: '#6b7280', padding: '20px' }}>
