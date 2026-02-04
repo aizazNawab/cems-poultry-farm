@@ -8,7 +8,8 @@ router.post('/verify-pin', (req, res) => {
     return res.status(400).json({ message: 'PIN is required' });
   }
 
-  if (pin === process.env.APP_PIN) {
+  // Convert both to strings for comparison
+  if (String(pin) === String(process.env.APP_PIN)) {
     return res.json({ success: true });
   }
 
