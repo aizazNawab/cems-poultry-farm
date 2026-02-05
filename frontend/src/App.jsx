@@ -351,7 +351,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">Qaiser Ali</div>
+            <div class="logo">Qaiser</div>
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">SALE INVOICE - Driver Copy</div>
@@ -409,7 +409,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">Qaiser Ali</div>
+            <div class="logo">Qaiser </div>
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">ENTRY RECEIPT - Driver Copy</div>
@@ -471,7 +471,7 @@ function App() {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '48px', marginBottom: '10px' }}>🐔</div>
-          <h2 style={{ margin: '0 0 4px', color: '#1e293b' }}>Qaiser Ali</h2>
+          <h2 style={{ margin: '0 0 4px', color: '#1e293b' }}>Qaiser </h2>
           <p style={{ margin: '0 0 30px', color: '#64748b', fontSize: '14px' }}>پولٹری فارم مینجمنٹ سسٹم</p>
 
           <div style={{ fontSize: '36px', marginBottom: '20px' }}>🔒</div>
@@ -529,7 +529,7 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>🐔 Qaiser Ali Poultry Farm Management System</h1>
+        <h1>🐔 Qaiser Poultry Farm Management System</h1>
         <p>پولٹری فارم مینجمنٹ سسٹم</p>
       </div>
 
@@ -1026,7 +1026,7 @@ function App() {
                         cursor: 'pointer',
                         width: '100%',
                         marginTop: '20px',
-                        fontWeight: 'bold',
+                      fontWeight: 'bold',
                         fontSize: '16px'
                       }}
                     >
