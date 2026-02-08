@@ -21,8 +21,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { entryId, loadedWeight, netWeight, ratePerMaund, totalAmount, advancePaid, oldBalance, paidNow, finalBalance, shedLocation, exitDate, exitTime } = req.body;
-    
+   const { entryId, loadedWeight, netWeight, ratePerKg, totalAmount, advancePaid, oldBalance, paidNow, finalBalance, shedLocation, exitDate, exitTime } = req.body;
     const entry = await Entry.findById(entryId);
     if (!entry) {
       return res.status(404).json({ message: 'Entry not found' });
@@ -56,7 +55,7 @@ router.post('/', async (req, res) => {
       emptyWeight: entry.emptyWeight,
       loadedWeight,
       netWeight,
-      ratePerMaund,
+      ratePerKg,      
       totalAmount,
       advancePaid,
       oldBalance,

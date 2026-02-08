@@ -10,7 +10,10 @@ const transactionSchema = new mongoose.Schema({
   emptyWeight: { type: Number, required: true },
   loadedWeight: { type: Number, required: true },
   netWeight: { type: Number, required: true },
-  ratePerMaund: { type: Number, required: true },
+  ratePerMaund: {
+  type: Number,
+  required: true
+},
   totalAmount: { type: Number, required: true },
   advancePaid: { type: Number, default: 0 },
   oldBalance: { type: Number, default: 0 },

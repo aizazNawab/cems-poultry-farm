@@ -64,7 +64,7 @@ function App() {
     emptyWeight: '',
     loadedWeight: '',
     netWeight: '',
-    ratePerMaund: '',
+ ratePerKg: '',
     totalAmount: '',
     advancePaid: '',
     oldBalance: '',
@@ -251,12 +251,13 @@ function App() {
     }
   }, [exitForm.loadedWeight, exitForm.emptyWeight]);
 
+ 
   useEffect(() => {
-    if (exitForm.netWeight && exitForm.ratePerMaund) {
-      const total = (parseFloat(exitForm.netWeight) / 40) * parseFloat(exitForm.ratePerMaund);
-      setExitForm(prev => ({ ...prev, totalAmount: total.toFixed(0) }));
-    }
-  }, [exitForm.netWeight, exitForm.ratePerMaund]);
+  if (exitForm.netWeight && exitForm.ratePerKg) {
+    const total = parseFloat(exitForm.netWeight) * parseFloat(exitForm.ratePerKg);
+    setExitForm(prev => ({ ...prev, totalAmount: total.toFixed(0) }));
+  }
+}, [exitForm.netWeight, exitForm.ratePerKg]);
 
   useEffect(() => {
     const total = parseFloat(exitForm.totalAmount) || 0;
@@ -278,7 +279,7 @@ function App() {
         entryId: selectedEntry._id,
         loadedWeight: exitForm.loadedWeight,
         netWeight: exitForm.netWeight,
-        ratePerMaund: exitForm.ratePerMaund,
+      ratePerKg: exitForm.ratePerKg,
         totalAmount: exitForm.totalAmount,
         advancePaid: exitForm.advancePaid,
         oldBalance: exitForm.oldBalance,
@@ -313,7 +314,7 @@ function App() {
       emptyWeight: '',
       loadedWeight: '',
       netWeight: '',
-      ratePerMaund: '',
+     ratePerKg: '',
       totalAmount: '',
       advancePaid: '',
       oldBalance: '',
@@ -363,8 +364,8 @@ function App() {
           <div class="row"><span>گاڑی کا خالی وزن</span><span class="label">${transaction.emptyWeight} kg</span></div>
           <div class="row"><span>گاڑی کا لوڈ وزن</span><span class="label">${transaction.loadedWeight} kg</span></div>
           <div class="row"><span>صافی وزن</span><span class="label">${transaction.netWeight} kg</span></div>
-          <div class="row"><span>من</span><span class="label">${(parseFloat(transaction.netWeight) / 40).toFixed(2)}</span></div>
-          <div class="row"><span>من ریٹ</span><span class="label">PKR ${transaction.ratePerMaund}</span></div>
+         
+    <div class="row"><span>فی کلو ریٹ</span><span class="label">PKR ${transaction.ratePerKg}</span></div>
           <div class="row"><span>کل رقم</span><span class="label">PKR ${transaction.totalAmount}</span></div>
           <div class="row"><span>پرانا بیلنس</span><span class="label">PKR ${transaction.oldBalance}</span></div>
           <div class="row"><span>ایڈوانس</span><span class="label">PKR ${transaction.advancePaid}</span></div>
@@ -774,7 +775,7 @@ function App() {
                     <input type="number" value={exitForm.netWeight} readOnly className="highlight" />
                   </div>
                   <div className="form-row">
-                    <input type="number" placeholder="Rate per Maund" value={exitForm.ratePerMaund} onChange={(e) => setExitForm({...exitForm, ratePerMaund: e.target.value})} />
+                    <input type="number" placeholder="Rate per KG / فی کلو ریٹ" value={exitForm.ratePerKg} onChange={(e) => setExitForm({...exitForm, ratePerKg: e.target.value})} />
                     <input type="number" value={exitForm.totalAmount} readOnly className="highlight" />
                   </div>
                   <div className="form-row">
