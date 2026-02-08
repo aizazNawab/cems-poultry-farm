@@ -280,7 +280,7 @@ function App() {
     }
     setLoading(true);
     try {
-      const response = await api.createTransaction({
+      const transactionData = {
         entryId: selectedEntry._id,
         loadedWeight: exitForm.loadedWeight,
         netWeight: exitForm.netWeight,
@@ -293,7 +293,10 @@ function App() {
         shedLocation: exitForm.shedLocation,
         exitDate: exitForm.exitDate,
         exitTime: exitForm.exitTime
-      });
+      };
+      
+      console.log('Sending transaction data:', transactionData);
+      const response = await api.createTransaction(transactionData);
       
       if (window.confirm('Exit completed successfully!\n\nDo you want to print the invoice?')) {
         printInvoice(response.data);
@@ -306,7 +309,8 @@ function App() {
       loadCustomers();
     } catch (error) {
       console.error('Error completing exit:', error);
-      alert('❌ Error completing exit! Please try again.');
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Error completing exit! Please try again.';
+      alert(`❌ ${errorMessage}`);
     }
     setLoading(false);
   };
