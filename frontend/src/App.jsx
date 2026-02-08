@@ -361,8 +361,8 @@ function App() {
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">SALE INVOICE - Driver Copy</div>
-          <div class="row"><span>تاریخ</span><span class="label">${transaction.exitDate} ${transaction.exitTime}</span></div>
           <div class="row"><span>رسید نمبر</span><span class="label">${transaction.entryNumber}</span></div>
+          <div class="row"><span>تاریخ / Date</span><span class="label">${transaction.exitDate} ${transaction.exitTime}</span></div>
           <div class="row"><span>ڈرائیور کا نام</span><span class="label">${transaction.customerName}</span></div>
           <div class="row"><span>ٹرک نمبر</span><span class="label">${transaction.truckNumber}</span></div>
           <div class="row"><span>رابطہ نمبر</span><span class="label">${transaction.contactNumber}</span></div>
@@ -418,8 +418,8 @@ function App() {
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">ENTRY RECEIPT - Driver Copy</div>
-          <div class="row"><span>تاریخ</span><span class="label">${entry.entryDate} ${entry.entryTime}</span></div>
           <div class="row"><span>رسید نمبر</span><span class="label">${entry.entryNumber}</span></div>
+          <div class="row"><span>تاریخ / Date</span><span class="label">${entry.entryDate} ${entry.entryTime}</span></div>
           <div class="row"><span>ڈرائیور کا نام</span><span class="label">${entry.customerName}</span></div>
           <div class="row"><span>ٹرک نمبر</span><span class="label">${entry.truckNumber}</span></div>
           <div class="row"><span>رابطہ نمبر</span><span class="label">${entry.contactNumber}</span></div>
@@ -1060,7 +1060,7 @@ function App() {
                   
                   {filteredTransactions.map(trans => (
                     <div key={trans._id} className="card">
-                      <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber})</div>
+                      <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber}) | <span style={{ color: '#6b7280' }}>📅 {trans.exitDate}</span></div>
                       <div>Contact: {trans.contactNumber} | Net: {trans.netWeight} kg | Rate: PKR {trans.ratePerKg}/kg | Total: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}</div>
                       <div className="card-actions">
                         <button onClick={() => printInvoice(trans)} className="btn-print">
