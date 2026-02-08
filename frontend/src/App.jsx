@@ -42,7 +42,8 @@ function App() {
 
   // Selected customer for details modal
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
   // Entry form
   const [customerType, setCustomerType] = useState(null);
   const [existingCustomerData, setExistingCustomerData] = useState(null);
@@ -64,7 +65,7 @@ function App() {
     emptyWeight: '',
     loadedWeight: '',
     netWeight: '',
- ratePerKg: '',
+    ratePerKg: '',
     totalAmount: '',
     advancePaid: '',
     oldBalance: '',
@@ -119,12 +120,16 @@ function App() {
   );
 
   const filteredTransactions = transactions
-    .filter(trans => 
-      trans.truckNumber.toLowerCase().includes(completedSearch.toLowerCase()) ||
-      trans.customerName.toLowerCase().includes(completedSearch.toLowerCase()) ||
-      trans.contactNumber.includes(completedSearch) ||
-      trans.entryNumber.includes(completedSearch)
-    )
+    .filter(trans => {
+      const matchesSearch = trans.truckNumber.toLowerCase().includes(completedSearch.toLowerCase()) ||
+        trans.customerName.toLowerCase().includes(completedSearch.toLowerCase()) ||
+        trans.contactNumber.includes(completedSearch) ||
+        trans.entryNumber.includes(completedSearch);
+      
+      const matchesDate = selectedDate ? trans.exitDate === selectedDate : true;
+      
+      return matchesSearch && matchesDate;
+    })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const filteredCustomers = customers.filter(cust => 
@@ -253,11 +258,11 @@ function App() {
 
  
   useEffect(() => {
-  if (exitForm.netWeight && exitForm.ratePerKg) {
-    const total = parseFloat(exitForm.netWeight) * parseFloat(exitForm.ratePerKg);
-    setExitForm(prev => ({ ...prev, totalAmount: total.toFixed(0) }));
-  }
-}, [exitForm.netWeight, exitForm.ratePerKg]);
+    if (exitForm.netWeight && exitForm.ratePerKg) {
+      const total = parseFloat(exitForm.netWeight) * parseFloat(exitForm.ratePerKg);
+      setExitForm(prev => ({ ...prev, totalAmount: total.toFixed(0) }));
+    }
+  }, [exitForm.netWeight, exitForm.ratePerKg]);
 
   useEffect(() => {
     const total = parseFloat(exitForm.totalAmount) || 0;
@@ -269,7 +274,7 @@ function App() {
   }, [exitForm.totalAmount, exitForm.advancePaid, exitForm.oldBalance, exitForm.paidNow]);
 
   const saveExit = async () => {
-    if (!exitForm.loadedWeight || !exitForm.ratePerMaund || !selectedEntry) {
+    if (!exitForm.loadedWeight || !exitForm.ratePerKg || !selectedEntry) {
       alert('Please fill required fields!');
       return;
     }
@@ -279,7 +284,7 @@ function App() {
         entryId: selectedEntry._id,
         loadedWeight: exitForm.loadedWeight,
         netWeight: exitForm.netWeight,
-      ratePerKg: exitForm.ratePerKg,
+        ratePerKg: exitForm.ratePerKg,
         totalAmount: exitForm.totalAmount,
         advancePaid: exitForm.advancePaid,
         oldBalance: exitForm.oldBalance,
@@ -314,7 +319,7 @@ function App() {
       emptyWeight: '',
       loadedWeight: '',
       netWeight: '',
-     ratePerKg: '',
+      ratePerKg: '',
       totalAmount: '',
       advancePaid: '',
       oldBalance: '',
@@ -364,8 +369,7 @@ function App() {
           <div class="row"><span>گاڑی کا خالی وزن</span><span class="label">${transaction.emptyWeight} kg</span></div>
           <div class="row"><span>گاڑی کا لوڈ وزن</span><span class="label">${transaction.loadedWeight} kg</span></div>
           <div class="row"><span>صافی وزن</span><span class="label">${transaction.netWeight} kg</span></div>
-         
-    <div class="row"><span>فی کلو ریٹ</span><span class="label">PKR ${transaction.ratePerKg}</span></div>
+          <div class="row"><span>فی کلو ریٹ</span><span class="label">PKR ${transaction.ratePerKg}</span></div>
           <div class="row"><span>کل رقم</span><span class="label">PKR ${transaction.totalAmount}</span></div>
           <div class="row"><span>پرانا بیلنس</span><span class="label">PKR ${transaction.oldBalance}</span></div>
           <div class="row"><span>ایڈوانس</span><span class="label">PKR ${transaction.advancePaid}</span></div>
@@ -422,6 +426,118 @@ function App() {
           <div class="row"><span>گاڑی کا خالی وزن</span><span class="label">${entry.emptyWeight} kg</span></div>
           <div class="row"><span>ایڈوانس ادائیگی</span><span class="label">PKR ${entry.advancePayment || 0}</span></div>
           <div class="total">Entry Completed - Please proceed to loading</div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const printAllTransactions = () => {
+    if (filteredTransactions.length === 0) {
+      alert('No transactions to print for this date!');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      alert('❌ Could not open print window. Please allow popups for this site in your browser settings.');
+      return;
+    }
+
+    const totalAmount = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.totalAmount), 0);
+    const totalWeight = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.netWeight), 0);
+    const totalBalance = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.finalBalance), 0);
+
+    printWindow.document.write(`
+      <html dir="rtl">
+        <head>
+          <title>Daily Report - ${selectedDate}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
+            .logo { font-size: 28px; font-weight: bold; }
+            .date-header { background: #10b981; color: white; padding: 12px; margin: 15px 0; text-align: center; font-size: 18px; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th { background: #333; color: white; padding: 10px; text-align: right; border: 1px solid #000; }
+            td { padding: 8px; border: 1px solid #ddd; text-align: right; }
+            tr:nth-child(even) { background: #f9f9f9; }
+            .summary { background: #10b981; color: white; padding: 15px; margin-top: 20px; border-radius: 8px; }
+            .summary-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 16px; }
+            .summary-row strong { font-size: 18px; }
+            @media print {
+              body { padding: 10px; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">Qaiser Poultry Farm</div>
+            <div>پولٹری فارم</div>
+          </div>
+          <div class="date-header">Daily Transaction Report - ${new Date(selectedDate).toLocaleDateString('en-GB')} | روزانہ رپورٹ</div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>رسید نمبر<br/>Entry #</th>
+                <th>نام<br/>Name</th>
+                <th>ٹرک نمبر<br/>Truck</th>
+                <th>رابطہ<br/>Contact</th>
+                <th>وزن (کلو)<br/>Weight (kg)</th>
+                <th>ریٹ (PKR/kg)<br/>Rate</th>
+                <th>کل رقم<br/>Total (PKR)</th>
+                <th>بیلنس<br/>Balance (PKR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredTransactions.map((trans, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td><strong>${trans.entryNumber}</strong></td>
+                  <td>${trans.customerName}</td>
+                  <td>${trans.truckNumber}</td>
+                  <td>${trans.contactNumber}</td>
+                  <td><strong>${trans.netWeight}</strong></td>
+                  <td>${trans.ratePerKg}</td>
+                  <td><strong>${trans.totalAmount}</strong></td>
+                  <td style="color: ${parseFloat(trans.finalBalance) > 0 ? '#dc2626' : '#16a34a'}; font-weight: bold;">${trans.finalBalance}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="summary">
+            <div class="summary-row">
+              <span>Total Transactions / کل لین دین:</span>
+              <strong>${filteredTransactions.length}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Total Weight / کل وزن:</span>
+              <strong>${totalWeight.toFixed(0)} kg</strong>
+            </div>
+            <div class="summary-row">
+              <span>Total Amount / کل رقم:</span>
+              <strong>PKR ${totalAmount.toFixed(0)}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Total Outstanding Balance / کل باقی رقم:</span>
+              <strong style="color: ${totalBalance > 0 ? '#fef3c7' : '#d1fae5'};">PKR ${totalBalance.toFixed(0)}</strong>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
+            Printed on: ${new Date().toLocaleString()} | Qaiser Poultry Farm Management System
+          </div>
+
           <script>
             window.onload = function() {
               setTimeout(function() {
@@ -852,6 +968,38 @@ function App() {
             <div>
               <h2>Completed Transactions ({transactions.length})</h2>
               
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                <input 
+                  type="date" 
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                  }}
+                />
+                <button
+                  onClick={() => setSelectedDate('')}
+                  style={{
+                    padding: '12px 20px',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  All Dates
+                </button>
+              </div>
+
               <input 
                 type="text" 
                 placeholder="🔍 Search by Entry #, Truck Number, Name, or Contact..." 
@@ -860,32 +1008,71 @@ function App() {
                 style={{
                   width: '100%',
                   padding: '12px',
-                  marginBottom: '20px',
+                  marginBottom: '15px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
                   fontSize: '16px'
                 }}
               />
 
+              {filteredTransactions.length > 0 && (
+                <button
+                  onClick={printAllTransactions}
+                  style={{
+                    width: '100%',
+                    padding: '15px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Printer size={20} />
+                  Print All ({filteredTransactions.length}) / تمام پرنٹ کریں
+                </button>
+              )}
+
               {filteredTransactions.length === 0 ? (
                 <p style={{ textAlign: 'center', color: '#6b7280', padding: '20px' }}>
-                  {completedSearch ? 'No transactions found matching your search.' : 'No completed transactions.'}
+                  {completedSearch || selectedDate ? 'No transactions found matching your search/date.' : 'No completed transactions.'}
                 </p>
               ) : (
-                filteredTransactions.map(trans => (
-                  <div key={trans._id} className="card">
-                    <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber})</div>
-                    <div>Contact: {trans.contactNumber} | Net: {trans.netWeight} kg | Total: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}</div>
-                    <div className="card-actions">
-                      <button onClick={() => printInvoice(trans)} className="btn-print">
-                        <Printer size={16} /> Print
-                      </button>
-                      <button onClick={() => handleDeleteTransaction(trans._id)} className="btn-delete">
-                        <Trash2 size={16} /> Delete
-                      </button>
-                    </div>
+                <>
+                  <div style={{ 
+                    backgroundColor: '#f0fdf4', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    marginBottom: '15px',
+                    border: '2px solid #10b981'
+                  }}>
+                    <strong>Summary:</strong> {filteredTransactions.length} transactions | 
+                    Total Weight: {filteredTransactions.reduce((sum, t) => sum + parseFloat(t.netWeight), 0).toFixed(0)} kg | 
+                    Total Amount: PKR {filteredTransactions.reduce((sum, t) => sum + parseFloat(t.totalAmount), 0).toFixed(0)}
                   </div>
-                ))
+                  
+                  {filteredTransactions.map(trans => (
+                    <div key={trans._id} className="card">
+                      <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber})</div>
+                      <div>Contact: {trans.contactNumber} | Net: {trans.netWeight} kg | Rate: PKR {trans.ratePerKg}/kg | Total: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}</div>
+                      <div className="card-actions">
+                        <button onClick={() => printInvoice(trans)} className="btn-print">
+                          <Printer size={16} /> Print
+                        </button>
+                        <button onClick={() => handleDeleteTransaction(trans._id)} className="btn-delete">
+                          <Trash2 size={16} /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           )}
@@ -1027,7 +1214,7 @@ function App() {
                         cursor: 'pointer',
                         width: '100%',
                         marginTop: '20px',
-                      fontWeight: 'bold',
+                        fontWeight: 'bold',
                         fontSize: '16px'
                       }}
                     >
