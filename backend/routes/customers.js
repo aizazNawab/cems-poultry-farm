@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// UPDATED: Find customer by truck number ONLY
+// Find customer by truck number ONLY
 router.get('/find', async (req, res) => {
   try {
     const { truckNumber } = req.query;
@@ -48,6 +48,27 @@ router.post('/', async (req, res) => {
       await customer.save();
     }
     res.status(201).json(customer);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// NEW: Update customer endpoint
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, contactNumber } = req.body;
+    const customer = await Customer.findById(req.params.id);
+    
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    customer.name = name;
+    customer.contactNumber = contactNumber;
+    customer.updatedAt = Date.now();
+    await customer.save();
+
+    res.json(customer);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

@@ -19,6 +19,7 @@ const transactionSchema = new mongoose.Schema({
   oldBalance: { type: Number, default: 0 },
   paidNow: { type: Number, default: 0 },
   finalBalance: { type: Number, required: true },
+  paymentMethod: { type: String, enum: ['cash', 'bank'], default: 'cash' },
   shedLocation: { type: String, default: '' },
   entryDate: { type: Date, required: true },
   entryTime: { type: String, required: true },

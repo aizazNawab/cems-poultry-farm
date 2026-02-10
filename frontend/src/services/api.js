@@ -17,6 +17,10 @@ export const createCustomer = (data) => {
   return axios.post(`${API_URL}/customers`, data);
 };
 
+export const updateCustomer = (id, data) => {
+  return axios.put(`${API_URL}/customers/${id}`, data);
+};
+
 // Entry APIs
 export const getPendingEntries = () => {
   return axios.get(`${API_URL}/entries/pending`);
@@ -46,6 +50,10 @@ export const getTransactions = (params) => {
 
 export const createTransaction = (data) => {
   return axios.post(`${API_URL}/transactions`, data);
+};
+
+export const updateTransaction = (id, data) => {
+  return axios.put(`${API_URL}/transactions/${id}`, data);
 };
 
 export const deleteTransaction = (id) => {
