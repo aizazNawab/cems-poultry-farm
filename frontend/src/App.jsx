@@ -383,6 +383,19 @@ function App() {
           <div class="row"><span>اب ادا کیا</span><span class="label">PKR ${transaction.paidNow || 0}</span></div>
           <div class="total">باقیا / Final Balance: PKR ${transaction.finalBalance}</div>
           ${transaction.shedLocation ? `<div style="margin-top: 20px; text-align: center;">سائیٹ: ${transaction.shedLocation}</div>` : ''}
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center;">
+            <div style="margin-bottom: 10px; font-weight: bold; font-size: 16px;">For Inquiries / استفسار کے لیے:</div>
+            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+              <div style="text-align: center;">
+                <div style="font-weight: bold; font-size: 18px;">QAISER</div>
+                <div style="font-size: 16px; margin-top: 5px;">03139393024</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-weight: bold; font-size: 18px;">AMIR</div>
+                <div style="font-size: 16px; margin-top: 5px;">03129425325</div>
+              </div>
+            </div>
+          </div>
           <script>
             window.onload = function() {
               setTimeout(function() {
@@ -433,6 +446,19 @@ function App() {
           <div class="row"><span>گاڑی کا خالی وزن</span><span class="label">${entry.emptyWeight} kg</span></div>
           <div class="row"><span>ایڈوانس ادائیگی</span><span class="label">PKR ${entry.advancePayment || 0}</span></div>
           <div class="total">Entry Completed - Please proceed to loading</div>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center;">
+            <div style="margin-bottom: 10px; font-weight: bold; font-size: 16px;">For Inquiries / استفسار کے لیے:</div>
+            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+              <div style="text-align: center;">
+                <div style="font-weight: bold; font-size: 18px;">QAISER</div>
+                <div style="font-size: 16px; margin-top: 5px;">03139393024</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-weight: bold; font-size: 18px;">AMIR</div>
+                <div style="font-size: 16px; margin-top: 5px;">03129425325</div>
+              </div>
+            </div>
+          </div>
           <script>
             window.onload = function() {
               setTimeout(function() {
@@ -538,6 +564,20 @@ function App() {
             <div class="summary-row">
               <span>Total Outstanding Balance / کل باقی رقم:</span>
               <strong style="color: ${totalBalance > 0 ? '#fef3c7' : '#d1fae5'};">PKR ${totalBalance.toFixed(0)}</strong>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center;">
+            <div style="margin-bottom: 10px; font-weight: bold; font-size: 16px;">For Inquiries / استفسار کے لیے:</div>
+            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+              <div style="text-align: center;">
+                <div style="font-weight: bold; font-size: 18px;">QAISER</div>
+                <div style="font-size: 16px; margin-top: 5px;">03139393024</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-weight: bold; font-size: 18px;">AMIR</div>
+                <div style="font-size: 16px; margin-top: 5px;">03129425325</div>
+              </div>
             </div>
           </div>
 
