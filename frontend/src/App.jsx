@@ -376,7 +376,7 @@ function App() {
           <div class="row"><span>گاڑی کا خالی وزن</span><span class="label">${transaction.emptyWeight} kg</span></div>
           <div class="row"><span>گاڑی کا لوڈ وزن</span><span class="label">${transaction.loadedWeight} kg</span></div>
           <div class="row"><span>صافی وزن</span><span class="label">${transaction.netWeight} kg</span></div>
-          <div class="row"><span>فی کلو ریٹ</span><span class="label">PKR ${transaction.ratePerKg}</span></div>
+          <div class="row"><span>فی کلو ریٹ</span><span class="label">PKR ${transaction.ratePerKg || transaction.ratePerMaund || 'N/A'}</span></div>
           <div class="row"><span>کل رقم</span><span class="label">PKR ${transaction.totalAmount}</span></div>
           <div class="row"><span>پرانا بیلنس</span><span class="label">PKR ${transaction.oldBalance}</span></div>
           <div class="row"><span>ایڈوانس</span><span class="label">PKR ${transaction.advancePaid}</span></div>
@@ -514,7 +514,7 @@ function App() {
                   <td>${trans.truckNumber}</td>
                   <td>${trans.contactNumber}</td>
                   <td><strong>${trans.netWeight}</strong></td>
-                  <td>${trans.ratePerKg}</td>
+                  <td>${trans.ratePerKg || trans.ratePerMaund || 'N/A'}</td>
                   <td><strong>${trans.totalAmount}</strong></td>
                   <td style="color: ${parseFloat(trans.finalBalance) > 0 ? '#dc2626' : '#16a34a'}; font-weight: bold;">${trans.finalBalance}</td>
                 </tr>
@@ -1068,7 +1068,7 @@ function App() {
                   {filteredTransactions.map(trans => (
                     <div key={trans._id} className="card">
                       <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber}) | <span style={{ color: '#6b7280' }}>📅 {trans.exitDate}</span></div>
-                      <div>Contact: {trans.contactNumber} | Net: {trans.netWeight} kg | Rate: PKR {trans.ratePerKg}/kg | Total: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}</div>
+                      <div>Contact: {trans.contactNumber} | Net: {trans.netWeight} kg | Rate: PKR {trans.ratePerKg || trans.ratePerMaund || 'N/A'}/kg | Total: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}</div>
                       <div className="card-actions">
                         <button onClick={() => printInvoice(trans)} className="btn-print">
                           <Printer size={16} /> Print
