@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LogIn, LogOut, Users, FileText, Printer, Trash2, Search, Download, Edit, X, TrendingUp, Calendar } from 'lucide-react';
+import { Plus, LogIn, LogOut, Users, FileText, Printer, Trash2, Search, Download, Edit } from 'lucide-react';
 import * as api from './services/api';
 import './App.css';
 
