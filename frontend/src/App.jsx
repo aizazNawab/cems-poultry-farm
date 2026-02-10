@@ -126,7 +126,10 @@ function App() {
         trans.contactNumber.includes(completedSearch) ||
         trans.entryNumber.includes(completedSearch);
       
-      const matchesDate = selectedDate ? trans.exitDate === selectedDate : true;
+      // Fix date comparison - convert both to YYYY-MM-DD format
+      const matchesDate = selectedDate 
+        ? new Date(trans.exitDate).toISOString().split('T')[0] === selectedDate 
+        : true;
       
       return matchesSearch && matchesDate;
     })
