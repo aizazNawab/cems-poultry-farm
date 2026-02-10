@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LogIn, LogOut, Users, FileText, Printer, Trash2, Search } from 'lucide-react';
+import { Plus, LogIn, LogOut, Users, FileText, Printer, Trash2, Search, Download, Edit, X, TrendingUp, Calendar } from 'lucide-react';
 import * as api from './services/api';
 import './App.css';
 
@@ -14,6 +14,10 @@ function App() {
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
+
+  // Edit states
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editingCustomer, setEditingCustomer] = useState(null);
 
   const verifyPin = async () => {
     if (!pin) {
@@ -73,7 +77,8 @@ function App() {
     finalBalance: '',
     exitDate: new Date().toISOString().split('T')[0],
     exitTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-    shedLocation: ''
+    shedLocation: '',
+    paymentMethod: 'cash'
   });
 
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -91,6 +96,7 @@ function App() {
       setCustomers(response.data);
     } catch (error) {
       console.error('Error loading customers:', error);
+      alert('⚠️ Failed to load customers. Please check your connection.');
     }
   };
 
@@ -100,6 +106,7 @@ function App() {
       setEntries(response.data);
     } catch (error) {
       console.error('Error loading entries:', error);
+      alert('⚠️ Failed to load pending entries. Please check your connection.');
     }
   };
 
@@ -109,6 +116,7 @@ function App() {
       setTransactions(response.data);
     } catch (error) {
       console.error('Error loading transactions:', error);
+      alert('⚠️ Failed to load transactions. Please check your connection.');
     }
   };
 
@@ -194,7 +202,8 @@ function App() {
       loadCustomers();
     } catch (error) {
       console.error('Error saving entry:', error);
-      alert(`❌ ${error.response?.data?.message || 'Error saving entry!'}`);
+      const errorMessage = error.response?.data?.message || 'Error saving entry!';
+      alert(`❌ ${errorMessage}`);
     }
     setLoading(false);
   };
@@ -295,7 +304,8 @@ function App() {
         finalBalance: exitForm.finalBalance,
         shedLocation: exitForm.shedLocation,
         exitDate: exitForm.exitDate,
-        exitTime: exitForm.exitTime
+        exitTime: exitForm.exitTime,
+        paymentMethod: exitForm.paymentMethod
       };
       
       console.log('Sending transaction data:', transactionData);
@@ -312,6 +322,9 @@ function App() {
       loadCustomers();
     } catch (error) {
       console.error('Error completing exit:', error);
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      
       const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Error completing exit! Please try again.';
       alert(`❌ ${errorMessage}`);
     }
@@ -334,9 +347,51 @@ function App() {
       finalBalance: '',
       exitDate: new Date().toISOString().split('T')[0],
       exitTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-      shedLocation: ''
+      shedLocation: '',
+      paymentMethod: 'cash'
     });
     setSelectedEntry(null);
+  };
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    if (filteredTransactions.length === 0) {
+      alert('No transactions to export!');
+      return;
+    }
+
+    const headers = ['Entry #', 'Date', 'Customer Name', 'Truck Number', 'Contact', 'Net Weight (kg)', 'Rate (PKR/kg)', 'Total Amount', 'Old Balance', 'Paid Now', 'Final Balance', 'Payment Method', 'Location'];
+    
+    const csvData = filteredTransactions.map(trans => [
+      trans.entryNumber,
+      new Date(trans.exitDate).toLocaleDateString('en-GB'),
+      trans.customerName,
+      trans.truckNumber,
+      trans.contactNumber,
+      trans.netWeight,
+      trans.ratePerKg || trans.ratePerMaund || '',
+      trans.totalAmount,
+      trans.oldBalance,
+      trans.paidNow || 0,
+      trans.finalBalance,
+      trans.paymentMethod || 'cash',
+      trans.shedLocation || ''
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `transactions_${selectedDate || 'all'}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const printInvoice = (transaction) => {
@@ -381,6 +436,7 @@ function App() {
           <div class="row"><span>پرانا بیلنس</span><span class="label">PKR ${transaction.oldBalance}</span></div>
           <div class="row"><span>ایڈوانس</span><span class="label">PKR ${transaction.advancePaid}</span></div>
           <div class="row"><span>اب ادا کیا</span><span class="label">PKR ${transaction.paidNow || 0}</span></div>
+          <div class="row"><span>ادائیگی کا طریقہ</span><span class="label">${transaction.paymentMethod === 'cash' ? 'نقد / Cash' : 'بینک / Bank'}</span></div>
           <div class="total">باقیا / Final Balance: PKR ${transaction.finalBalance}</div>
           ${transaction.shedLocation ? `<div style="margin-top: 20px; text-align: center;">سائیٹ: ${transaction.shedLocation}</div>` : ''}
           <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center;">
@@ -599,29 +655,114 @@ function App() {
   };
 
   const handleDeleteEntry = async (id) => {
-    if (window.confirm('Delete this entry?')) {
+    if (window.confirm('⚠️ Are you sure you want to delete this entry?')) {
       try {
         await api.deleteEntry(id);
         loadPendingEntries();
+        alert('✅ Entry deleted successfully!');
       } catch (error) {
         console.error('Error deleting entry:', error);
+        alert('❌ Failed to delete entry. Please try again.');
       }
     }
   };
 
   const handleDeleteTransaction = async (id) => {
-    if (window.confirm('Delete this transaction?')) {
+    if (window.confirm('⚠️ Are you sure you want to delete this transaction? This will affect customer balance.')) {
       try {
         await api.deleteTransaction(id);
         loadTransactions();
         loadCustomers();
+        alert('✅ Transaction deleted successfully!');
       } catch (error) {
         console.error('Error deleting transaction:', error);
+        alert('❌ Failed to delete transaction. Please try again.');
       }
     }
   };
 
-  // ✅ PIN LOCK SCREEN — renders BEFORE the main app if not unlocked
+  // Edit Transaction
+  const handleEditTransaction = (trans) => {
+    setEditingTransaction({
+      _id: trans._id,
+      loadedWeight: trans.loadedWeight,
+      ratePerKg: trans.ratePerKg || trans.ratePerMaund,
+      paidNow: trans.paidNow || 0,
+      shedLocation: trans.shedLocation || '',
+      paymentMethod: trans.paymentMethod || 'cash'
+    });
+  };
+
+  const saveTransactionEdit = async () => {
+    if (!editingTransaction) return;
+    
+    try {
+      await api.updateTransaction(editingTransaction._id, editingTransaction);
+      setEditingTransaction(null);
+      loadTransactions();
+      loadCustomers();
+      alert('✅ Transaction updated successfully!');
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      alert('❌ Failed to update transaction. Please try again.');
+    }
+  };
+
+  // Edit Customer
+  const handleEditCustomer = (cust) => {
+    setEditingCustomer({
+      _id: cust._id,
+      name: cust.name,
+      contactNumber: cust.contactNumber
+    });
+  };
+
+  const saveCustomerEdit = async () => {
+    if (!editingCustomer) return;
+    
+    try {
+      await api.updateCustomer(editingCustomer._id, {
+        name: editingCustomer.name,
+        contactNumber: editingCustomer.contactNumber
+      });
+      setEditingCustomer(null);
+      loadCustomers();
+      alert('✅ Customer updated successfully!');
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      alert('❌ Failed to update customer. Please try again.');
+    }
+  };
+
+  // Calculate Analytics
+  const getAnalytics = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayTransactions = transactions.filter(t => 
+      new Date(t.exitDate).toISOString().split('T')[0] === today
+    );
+
+    const thisMonth = new Date().getMonth();
+    const thisYear = new Date().getFullYear();
+    const monthTransactions = transactions.filter(t => {
+      const date = new Date(t.exitDate);
+      return date.getMonth() === thisMonth && date.getFullYear() === thisYear;
+    });
+
+    return {
+      todayRevenue: todayTransactions.reduce((sum, t) => sum + parseFloat(t.totalAmount), 0),
+      todayWeight: todayTransactions.reduce((sum, t) => sum + parseFloat(t.netWeight), 0),
+      todayCount: todayTransactions.length,
+      monthRevenue: monthTransactions.reduce((sum, t) => sum + parseFloat(t.totalAmount), 0),
+      monthWeight: monthTransactions.reduce((sum, t) => sum + parseFloat(t.netWeight), 0),
+      monthCount: monthTransactions.length,
+      totalOutstanding: customers.reduce((sum, c) => sum + (parseFloat(c.balance) > 0 ? parseFloat(c.balance) : 0), 0),
+      customersWithBalance: customers.filter(c => parseFloat(c.balance) > 0).length
+    };
+  };
+
+  const analytics = getAnalytics();
+
+  // ✅ PIN LOCK SCREEN
   if (!isUnlocked) {
     return (
       <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#1e293b' }}>
@@ -689,12 +830,42 @@ function App() {
     );
   }
 
-  // ✅ MAIN APP — only renders after PIN is verified
+  // ✅ MAIN APP
   return (
     <div className="app">
       <div className="header">
         <h1>🐔 Qaiser Poultry Farm Management System</h1>
         <p>پولٹری فارم مینجمنٹ سسٹم</p>
+      </div>
+
+      {/* Analytics Dashboard */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '15px', 
+        padding: '20px',
+        backgroundColor: '#f8fafc'
+      }}>
+        <div style={{ backgroundColor: '#10b981', color: 'white', padding: '15px', borderRadius: '8px' }}>
+          <div style={{ fontSize: '12px', opacity: 0.9 }}>Today's Revenue</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>PKR {analytics.todayRevenue.toLocaleString()}</div>
+          <div style={{ fontSize: '11px', opacity: 0.8 }}>{analytics.todayCount} transactions</div>
+        </div>
+        <div style={{ backgroundColor: '#3b82f6', color: 'white', padding: '15px', borderRadius: '8px' }}>
+          <div style={{ fontSize: '12px', opacity: 0.9 }}>This Month</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>PKR {analytics.monthRevenue.toLocaleString()}</div>
+          <div style={{ fontSize: '11px', opacity: 0.8 }}>{analytics.monthCount} transactions</div>
+        </div>
+        <div style={{ backgroundColor: '#f59e0b', color: 'white', padding: '15px', borderRadius: '8px' }}>
+          <div style={{ fontSize: '12px', opacity: 0.9 }}>Outstanding Balance</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>PKR {analytics.totalOutstanding.toLocaleString()}</div>
+          <div style={{ fontSize: '11px', opacity: 0.8 }}>{analytics.customersWithBalance} customers</div>
+        </div>
+        <div style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '15px', borderRadius: '8px' }}>
+          <div style={{ fontSize: '12px', opacity: 0.9 }}>Pending Entries</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{entries.length}</div>
+          <div style={{ fontSize: '11px', opacity: 0.8 }}>awaiting exit</div>
+        </div>
       </div>
 
       <div className="container">
@@ -948,6 +1119,43 @@ function App() {
                     <input type="number" value={exitForm.finalBalance} readOnly className="final-balance" />
                   </div>
                   <input type="text" placeholder="Shed Location" value={exitForm.shedLocation} onChange={(e) => setExitForm({...exitForm, shedLocation: e.target.value})} />
+                  
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Payment Method / ادائیگی کا طریقہ</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        onClick={() => setExitForm({...exitForm, paymentMethod: 'cash'})}
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          backgroundColor: exitForm.paymentMethod === 'cash' ? '#10b981' : '#e5e7eb',
+                          color: exitForm.paymentMethod === 'cash' ? 'white' : '#374151',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        💵 Cash / نقد
+                      </button>
+                      <button
+                        onClick={() => setExitForm({...exitForm, paymentMethod: 'bank'})}
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          backgroundColor: exitForm.paymentMethod === 'bank' ? '#10b981' : '#e5e7eb',
+                          color: exitForm.paymentMethod === 'bank' ? 'white' : '#374151',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🏦 Bank / بینک
+                      </button>
+                    </div>
+                  </div>
+
                   <button onClick={saveExit} disabled={loading} className="btn-primary">
                     <LogOut size={20} /> {loading ? 'Processing...' : 'Complete Exit / مکمل کریں'}
                   </button>
@@ -1063,28 +1271,50 @@ function App() {
               />
 
               {filteredTransactions.length > 0 && (
-                <button
-                  onClick={printAllTransactions}
-                  style={{
-                    width: '100%',
-                    padding: '15px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <Printer size={20} />
-                  Print All ({filteredTransactions.length}) / تمام پرنٹ کریں
-                </button>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                  <button
+                    onClick={printAllTransactions}
+                    style={{
+                      flex: 1,
+                      padding: '15px',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Printer size={20} />
+                    Print All ({filteredTransactions.length})
+                  </button>
+                  <button
+                    onClick={exportToCSV}
+                    style={{
+                      flex: 1,
+                      padding: '15px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Download size={20} />
+                    Export CSV
+                  </button>
+                </div>
               )}
 
               {filteredTransactions.length === 0 ? (
@@ -1107,11 +1337,26 @@ function App() {
                   
                   {filteredTransactions.map(trans => (
                     <div key={trans._id} className="card">
-                      <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber}) | <span style={{ color: '#6b7280' }}>📅 {trans.exitDate}</span></div>
+                      <div><strong>{trans.entryNumber}</strong> - {trans.customerName} ({trans.truckNumber}) | <span style={{ color: '#6b7280' }}>📅 {new Date(trans.exitDate).toLocaleDateString('en-GB')}</span></div>
                       <div>Contact: {trans.contactNumber} | Net: {trans.netWeight} kg | Rate: PKR {trans.ratePerKg || trans.ratePerMaund || 'N/A'}/kg | Total: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}</div>
                       <div className="card-actions">
                         <button onClick={() => printInvoice(trans)} className="btn-print">
                           <Printer size={16} /> Print
+                        </button>
+                        <button onClick={() => handleEditTransaction(trans)} style={{
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <Edit size={16} /> Edit
                         </button>
                         <button onClick={() => handleDeleteTransaction(trans._id)} className="btn-delete">
                           <Trash2 size={16} /> Delete
@@ -1182,6 +1427,28 @@ function App() {
                     <h3>{cust.name}</h3>
                     <div>Truck: {cust.truckNumber} | Contact: {cust.contactNumber}</div>
                     <div>Balance: <strong className={cust.balance > 0 ? 'text-red' : 'text-green'}>PKR {cust.balance}</strong> | Trips: {cust.totalTransactions}</div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditCustomer(cust);
+                      }}
+                      style={{
+                        backgroundColor: '#f59e0b',
+                        color: 'white',
+                        padding: '8px 16px',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginTop: '10px'
+                      }}
+                    >
+                      <Edit size={16} /> Edit Customer
+                    </button>
                   </div>
                 ))
               )}
@@ -1208,7 +1475,7 @@ function App() {
                       backgroundColor: 'white',
                       padding: '30px',
                       borderRadius: '12px',
-                      maxWidth: '500px',
+                      maxWidth: '600px',
                       width: '90%',
                       maxHeight: '80vh',
                       overflow: 'auto'
@@ -1249,6 +1516,35 @@ function App() {
                     <div style={{ marginBottom: '15px' }}>
                       <strong>Last Updated:</strong> {new Date(selectedCustomer.updatedAt).toLocaleDateString()}
                     </div>
+
+                    <h3 style={{ marginTop: '25px', marginBottom: '15px', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>
+                      Transaction History
+                    </h3>
+                    {transactions.filter(t => t.customerId === selectedCustomer._id).length === 0 ? (
+                      <p style={{ textAlign: 'center', color: '#6b7280', padding: '15px' }}>No transactions yet</p>
+                    ) : (
+                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {transactions
+                          .filter(t => t.customerId === selectedCustomer._id)
+                          .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate))
+                          .map((trans, idx) => (
+                            <div key={idx} style={{ 
+                              padding: '12px', 
+                              marginBottom: '8px', 
+                              backgroundColor: '#f9fafb', 
+                              borderRadius: '6px',
+                              border: '1px solid #e5e7eb'
+                            }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                                {trans.entryNumber} - {new Date(trans.exitDate).toLocaleDateString('en-GB')}
+                              </div>
+                              <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                Weight: {trans.netWeight} kg | Amount: PKR {trans.totalAmount} | Balance: PKR {trans.finalBalance}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
                     
                     <button 
                       onClick={() => setSelectedCustomer(null)}
@@ -1274,6 +1570,196 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setEditingTransaction(null)}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Edit Transaction</h2>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Loaded Weight (kg)</label>
+              <input 
+                type="number" 
+                value={editingTransaction.loadedWeight}
+                onChange={(e) => setEditingTransaction({...editingTransaction, loadedWeight: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Rate per KG</label>
+              <input 
+                type="number" 
+                value={editingTransaction.ratePerKg}
+                onChange={(e) => setEditingTransaction({...editingTransaction, ratePerKg: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Paid Now</label>
+              <input 
+                type="number" 
+                value={editingTransaction.paidNow}
+                onChange={(e) => setEditingTransaction({...editingTransaction, paidNow: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Location</label>
+              <input 
+                type="text" 
+                value={editingTransaction.shedLocation}
+                onChange={(e) => setEditingTransaction({...editingTransaction, shedLocation: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={saveTransactionEdit}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setEditingTransaction(null)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {editingCustomer && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setEditingCustomer(null)}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              padding: '30px',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Edit Customer</h2>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Customer Name</label>
+              <input 
+                type="text" 
+                value={editingCustomer.name}
+                onChange={(e) => setEditingCustomer({...editingCustomer, name: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Contact Number</label>
+              <input 
+                type="text" 
+                value={editingCustomer.contactNumber}
+                onChange={(e) => setEditingCustomer({...editingCustomer, contactNumber: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={saveCustomerEdit}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setEditingCustomer(null)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
