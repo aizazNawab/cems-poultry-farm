@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, LogIn, LogOut, Users, FileText, Printer, Trash2, Search, Download, Edit } from 'lucide-react';
+import { Plus, LogIn, LogOut, Users, FileText, Printer, Trash2, Search, Download, Edit, X, TrendingUp, Calendar } from 'lucide-react';
 import * as api from './services/api';
 import './App.css';
 
@@ -74,6 +74,7 @@ function App() {
     advancePaid: '',
     oldBalance: '',
     paidNow: '',
+    returnPayment: '',
     finalBalance: '',
     exitDate: new Date().toISOString().split('T')[0],
     exitTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
@@ -281,9 +282,12 @@ function App() {
     const advance = parseFloat(exitForm.advancePaid) || 0;
     const oldBal = parseFloat(exitForm.oldBalance) || 0;
     const paidNow = parseFloat(exitForm.paidNow) || 0;
-    const finalBal = (total + oldBal) - (advance + paidNow);
+    const returnPay = parseFloat(exitForm.returnPayment) || 0;
+    // Final Balance = (Total + Old Balance) - (Advance + Paid Now + Return Payment)
+    // Return payment is subtracted because it's money we're giving back
+    const finalBal = (total + oldBal) - (advance + paidNow + returnPay);
     setExitForm(prev => ({ ...prev, finalBalance: finalBal.toFixed(0) }));
-  }, [exitForm.totalAmount, exitForm.advancePaid, exitForm.oldBalance, exitForm.paidNow]);
+  }, [exitForm.totalAmount, exitForm.advancePaid, exitForm.oldBalance, exitForm.paidNow, exitForm.returnPayment]);
 
   const saveExit = async () => {
     if (!exitForm.loadedWeight || !exitForm.ratePerKg || !selectedEntry) {
@@ -301,6 +305,7 @@ function App() {
         advancePaid: exitForm.advancePaid,
         oldBalance: exitForm.oldBalance,
         paidNow: exitForm.paidNow,
+        returnPayment: exitForm.returnPayment,
         finalBalance: exitForm.finalBalance,
         shedLocation: exitForm.shedLocation,
         exitDate: exitForm.exitDate,
@@ -344,6 +349,7 @@ function App() {
       advancePaid: '',
       oldBalance: '',
       paidNow: '',
+      returnPayment: '',
       finalBalance: '',
       exitDate: new Date().toISOString().split('T')[0],
       exitTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
@@ -360,7 +366,7 @@ function App() {
       return;
     }
 
-    const headers = ['Entry #', 'Date', 'Customer Name', 'Truck Number', 'Contact', 'Net Weight (kg)', 'Rate (PKR/kg)', 'Total Amount', 'Old Balance', 'Paid Now', 'Final Balance', 'Payment Method', 'Location'];
+    const headers = ['Entry #', 'Date', 'Customer Name', 'Truck Number', 'Contact', 'Net Weight (kg)', 'Rate (PKR/kg)', 'Total Amount', 'Old Balance', 'Paid Now', 'Return Payment', 'Final Balance', 'Payment Method', 'Location'];
     
     const csvData = filteredTransactions.map(trans => [
       trans.entryNumber,
@@ -373,6 +379,7 @@ function App() {
       trans.totalAmount,
       trans.oldBalance,
       trans.paidNow || 0,
+      trans.returnPayment || 0,
       trans.finalBalance,
       trans.paymentMethod || 'cash',
       trans.shedLocation || ''
@@ -436,6 +443,7 @@ function App() {
           <div class="row"><span>پرانا بیلنس</span><span class="label">PKR ${transaction.oldBalance}</span></div>
           <div class="row"><span>ایڈوانس</span><span class="label">PKR ${transaction.advancePaid}</span></div>
           <div class="row"><span>اب ادا کیا</span><span class="label">PKR ${transaction.paidNow || 0}</span></div>
+          ${transaction.returnPayment ? `<div class="row" style="background: #fee2e2;"><span>واپسی ادائیگی / Return Payment</span><span class="label" style="color: #dc2626; font-weight: bold;">PKR ${transaction.returnPayment}</span></div>` : ''}
           <div class="row"><span>ادائیگی کا طریقہ</span><span class="label">${transaction.paymentMethod === 'cash' ? 'نقد / Cash' : 'بینک / Bank'}</span></div>
           <div class="total">باقیا / Final Balance: PKR ${transaction.finalBalance}</div>
           ${transaction.shedLocation ? `<div style="margin-top: 20px; text-align: center;">سائیٹ: ${transaction.shedLocation}</div>` : ''}
@@ -688,6 +696,7 @@ function App() {
       loadedWeight: trans.loadedWeight,
       ratePerKg: trans.ratePerKg || trans.ratePerMaund,
       paidNow: trans.paidNow || 0,
+      returnPayment: trans.returnPayment || 0,
       shedLocation: trans.shedLocation || '',
       paymentMethod: trans.paymentMethod || 'cash'
     });
@@ -1116,6 +1125,15 @@ function App() {
                     <input type="number" value={exitForm.oldBalance} readOnly />
                     <input type="number" value={exitForm.advancePaid} readOnly />
                     <input type="number" placeholder="Paid Now" value={exitForm.paidNow} onChange={(e) => setExitForm({...exitForm, paidNow: e.target.value})} />
+                  </div>
+                  <div className="form-row">
+                    <input 
+                      type="number" 
+                      placeholder="Return Payment / واپسی ادائیگی" 
+                      value={exitForm.returnPayment} 
+                      onChange={(e) => setExitForm({...exitForm, returnPayment: e.target.value})}
+                      style={{ borderColor: exitForm.returnPayment ? '#ef4444' : undefined }}
+                    />
                     <input type="number" value={exitForm.finalBalance} readOnly className="final-balance" />
                   </div>
                   <input type="text" placeholder="Shed Location" value={exitForm.shedLocation} onChange={(e) => setExitForm({...exitForm, shedLocation: e.target.value})} />
@@ -1626,6 +1644,16 @@ function App() {
                 type="number" 
                 value={editingTransaction.paidNow}
                 onChange={(e) => setEditingTransaction({...editingTransaction, paidNow: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Return Payment / واپسی ادائیگی</label>
+              <input 
+                type="number" 
+                value={editingTransaction.returnPayment}
+                onChange={(e) => setEditingTransaction({...editingTransaction, returnPayment: e.target.value})}
                 style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
               />
             </div>

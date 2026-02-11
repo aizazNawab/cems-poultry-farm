@@ -18,6 +18,7 @@ const transactionSchema = new mongoose.Schema({
   advancePaid: { type: Number, default: 0 },
   oldBalance: { type: Number, default: 0 },
   paidNow: { type: Number, default: 0 },
+  returnPayment: { type: Number, default: 0 },
   finalBalance: { type: Number, required: true },
   paymentMethod: { type: String, enum: ['cash', 'bank'], default: 'cash' },
   shedLocation: { type: String, default: '' },

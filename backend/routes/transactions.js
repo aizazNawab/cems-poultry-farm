@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { entryId, loadedWeight, netWeight, ratePerKg, totalAmount, advancePaid, oldBalance, paidNow, finalBalance, shedLocation, exitDate, exitTime, paymentMethod } = req.body;
+    const { entryId, loadedWeight, netWeight, ratePerKg, totalAmount, advancePaid, oldBalance, paidNow, returnPayment, finalBalance, shedLocation, exitDate, exitTime, paymentMethod } = req.body;
     const entry = await Entry.findById(entryId);
     if (!entry) {
       return res.status(404).json({ message: 'Entry not found' });
@@ -60,6 +60,7 @@ router.post('/', async (req, res) => {
       advancePaid,
       oldBalance,
       paidNow,
+      returnPayment: returnPayment || 0,
       finalBalance,
       shedLocation,
       paymentMethod: paymentMethod || 'cash',
@@ -91,7 +92,7 @@ router.post('/', async (req, res) => {
 // NEW: Update transaction endpoint
 router.put('/:id', async (req, res) => {
   try {
-    const { loadedWeight, ratePerKg, paidNow, shedLocation, paymentMethod } = req.body;
+    const { loadedWeight, ratePerKg, paidNow, returnPayment, shedLocation, paymentMethod } = req.body;
     const transaction = await Transaction.findById(req.params.id);
     
     if (!transaction) {
@@ -118,10 +119,24 @@ router.put('/:id', async (req, res) => {
       transaction.paidNow = paidNow;
       
       // Recalculate final balance
-      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + paidNow);
+      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + paidNow + (transaction.returnPayment || 0));
       
       // Update customer balance
       const balanceDiff = oldPaidNow - paidNow;
+      const customer = await Customer.findById(transaction.customerId);
+      if (customer) {
+        customer.balance = parseFloat(transaction.finalBalance);
+        customer.updatedAt = Date.now();
+        await customer.save();
+      }
+    }
+
+    if (returnPayment !== undefined) {
+      transaction.returnPayment = returnPayment;
+      // Recalculate final balance
+      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + (transaction.paidNow || 0) + returnPayment);
+      
+      // Update customer balance
       const customer = await Customer.findById(transaction.customerId);
       if (customer) {
         customer.balance = parseFloat(transaction.finalBalance);
