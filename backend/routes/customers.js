@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
 // NEW: Update customer endpoint
 router.put('/:id', async (req, res) => {
   try {
-    const { name, contactNumber } = req.body;
+    const { name, contactNumber, balance } = req.body;
     const customer = await Customer.findById(req.params.id);
     
     if (!customer) {
@@ -65,6 +65,12 @@ router.put('/:id', async (req, res) => {
 
     customer.name = name;
     customer.contactNumber = contactNumber;
+    
+    // Allow balance update if provided
+    if (balance !== undefined) {
+      customer.balance = parseFloat(balance);
+    }
+    
     customer.updatedAt = Date.now();
     await customer.save();
 

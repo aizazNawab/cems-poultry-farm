@@ -593,6 +593,7 @@ function App() {
                 <th>وزن (کلو)<br/>Weight (kg)</th>
                 <th>ریٹ (PKR/kg)<br/>Rate</th>
                 <th>کل رقم<br/>Total (PKR)</th>
+                <th>ادائیگی<br/>Payment</th>
                 <th>بیلنس<br/>Balance (PKR)</th>
               </tr>
             </thead>
@@ -607,6 +608,7 @@ function App() {
                   <td><strong>${trans.netWeight}</strong></td>
                   <td>${trans.ratePerKg || trans.ratePerMaund || 'N/A'}</td>
                   <td><strong>${trans.totalAmount}</strong></td>
+                  <td>${trans.paymentMethod === 'cash' ? 'نقد' : trans.paymentMethod === 'bank' ? 'بینک' : 'نقد'}</td>
                   <td style="color: ${parseFloat(trans.finalBalance) > 0 ? '#dc2626' : '#16a34a'}; font-weight: bold;">${trans.finalBalance}</td>
                 </tr>
               `).join('')}
@@ -723,7 +725,8 @@ function App() {
     setEditingCustomer({
       _id: cust._id,
       name: cust.name,
-      contactNumber: cust.contactNumber
+      contactNumber: cust.contactNumber,
+      balance: cust.balance
     });
   };
 
@@ -733,7 +736,8 @@ function App() {
     try {
       await api.updateCustomer(editingCustomer._id, {
         name: editingCustomer.name,
-        contactNumber: editingCustomer.contactNumber
+        contactNumber: editingCustomer.contactNumber,
+        balance: editingCustomer.balance
       });
       setEditingCustomer(null);
       loadCustomers();
@@ -1752,6 +1756,66 @@ function App() {
                 onChange={(e) => setEditingCustomer({...editingCustomer, contactNumber: e.target.value})}
                 style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px' }}
               />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Current Balance: 
+                <span style={{ 
+                  color: editingCustomer.balance > 0 ? '#dc2626' : '#16a34a', 
+                  fontSize: '18px',
+                  marginLeft: '10px'
+                }}>
+                  PKR {editingCustomer.balance}
+                </span>
+              </label>
+              <input 
+                type="number" 
+                placeholder="New Balance / نیا بیلنس"
+                value={editingCustomer.balance}
+                onChange={(e) => setEditingCustomer({...editingCustomer, balance: e.target.value})}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '16px' }}
+              />
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  onClick={() => setEditingCustomer({...editingCustomer, balance: '0'})}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  ✅ Clear Balance (Set to 0)
+                </button>
+                <button
+                  onClick={() => {
+                    const paid = prompt('How much did customer pay? / کتنا ادا کیا؟');
+                    if (paid && !isNaN(paid)) {
+                      const newBalance = parseFloat(editingCustomer.balance) - parseFloat(paid);
+                      setEditingCustomer({...editingCustomer, balance: newBalance.toString()});
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  💰 Record Payment
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
