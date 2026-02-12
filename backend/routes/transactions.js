@@ -119,7 +119,8 @@ router.put('/:id', async (req, res) => {
       transaction.paidNow = paidNow;
       
       // Recalculate final balance
-      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + paidNow + (transaction.returnPayment || 0));
+      // Return payment REDUCES the amount owed (subtract from payments side)
+      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + paidNow - (transaction.returnPayment || 0));
       
       // Update customer balance
       const balanceDiff = oldPaidNow - paidNow;
@@ -134,7 +135,8 @@ router.put('/:id', async (req, res) => {
     if (returnPayment !== undefined) {
       transaction.returnPayment = returnPayment;
       // Recalculate final balance
-      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + (transaction.paidNow || 0) + returnPayment);
+      // Return payment reduces what customer owes
+      transaction.finalBalance = (transaction.totalAmount + transaction.oldBalance) - (transaction.advancePaid + (transaction.paidNow || 0) - returnPayment);
       
       // Update customer balance
       const customer = await Customer.findById(transaction.customerId);

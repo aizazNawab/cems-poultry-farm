@@ -283,9 +283,10 @@ function App() {
     const oldBal = parseFloat(exitForm.oldBalance) || 0;
     const paidNow = parseFloat(exitForm.paidNow) || 0;
     const returnPay = parseFloat(exitForm.returnPayment) || 0;
-    // Final Balance = (Total + Old Balance) - (Advance + Paid Now + Return Payment)
-    // Return payment is subtracted because it's money we're giving back
-    const finalBal = (total + oldBal) - (advance + paidNow + returnPay);
+    // Final Balance = (Total + Old Balance) - (Advance + Paid Now - Return Payment)
+    // Return payment REDUCES what customer owes (we're giving money back)
+    // So it should be ADDED to the total payments side
+    const finalBal = (total + oldBal) - (advance + paidNow - returnPay);
     setExitForm(prev => ({ ...prev, finalBalance: finalBal.toFixed(0) }));
   }, [exitForm.totalAmount, exitForm.advancePaid, exitForm.oldBalance, exitForm.paidNow, exitForm.returnPayment]);
 
