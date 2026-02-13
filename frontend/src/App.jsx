@@ -427,7 +427,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">Qaiser</div>
+            <div class="logo">Sherpao</div>
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">SALE INVOICE - Driver Copy</div>
@@ -499,7 +499,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">Qaiser </div>
+            <div class="logo">Sherpao</div>
             <div>Poultry Farm / پولٹری فارم</div>
           </div>
           <div class="invoice-type">ENTRY RECEIPT - Driver Copy</div>
@@ -577,7 +577,7 @@ function App() {
         </head>
         <body>
           <div class="header">
-            <div class="logo">Qaiser Poultry Farm</div>
+            <div class="logo">Sherpao Poultry Farm</div>
             <div>پولٹری فارم</div>
           </div>
           <div class="date-header">Daily Transaction Report - ${new Date(selectedDate).toLocaleDateString('en-GB')} | روزانہ رپورٹ</div>
@@ -649,7 +649,7 @@ function App() {
           </div>
 
           <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
-            Printed on: ${new Date().toLocaleString()} | Qaiser Poultry Farm Management System
+            Printed on: ${new Date().toLocaleString()} | Sherpao Poultry Farm Management System
           </div>
 
           <script>
@@ -790,7 +790,7 @@ function App() {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '48px', marginBottom: '10px' }}>🐔</div>
-          <h2 style={{ margin: '0 0 4px', color: '#1e293b' }}>Qaiser </h2>
+          <h2 style={{ margin: '0 0 4px', color: '#1e293b' }}>Sherpao</h2>
           <p style={{ margin: '0 0 30px', color: '#64748b', fontSize: '14px' }}>پولٹری فارم مینجمنٹ سسٹم</p>
 
           <div style={{ fontSize: '36px', marginBottom: '20px' }}>🔒</div>
@@ -848,7 +848,7 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>🐔 Qaiser Poultry Farm Management System</h1>
+        <h1>🐔 Sherpao Poultry Farm Management System</h1>
         <p>پولٹری فارم مینجمنٹ سسٹم</p>
       </div>
 
