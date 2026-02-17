@@ -46,7 +46,8 @@ function App() {
 
   // Selected customer for details modal
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   
   // Entry form
   const [customerType, setCustomerType] = useState(null);
@@ -135,12 +136,11 @@ function App() {
         trans.contactNumber.includes(completedSearch) ||
         trans.entryNumber.includes(completedSearch);
       
-      // Fix date comparison - convert both to YYYY-MM-DD format
-      const matchesDate = selectedDate 
-        ? new Date(trans.exitDate).toISOString().split('T')[0] === selectedDate 
-        : true;
+      const transDate = new Date(trans.exitDate).toISOString().split('T')[0];
+      const matchesStart = startDate ? transDate >= startDate : true;
+      const matchesEnd = endDate ? transDate <= endDate : true;
       
-      return matchesSearch && matchesDate;
+      return matchesSearch && matchesStart && matchesEnd;
     })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -395,7 +395,7 @@ function App() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `transactions_${selectedDate || 'all'}.csv`);
+    link.setAttribute('download', `transactions_${startDate || 'all'}_to_${endDate || 'all'}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -556,7 +556,7 @@ function App() {
     printWindow.document.write(`
       <html dir="rtl">
         <head>
-          <title>Daily Report - ${selectedDate}</title>
+          <title>Report ${startDate || ''} to ${endDate || ''}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; }
             .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
@@ -580,7 +580,12 @@ function App() {
             <div class="logo">Sherpao Poultry Farm</div>
             <div>پولٹری فارم</div>
           </div>
-          <div class="date-header">Daily Transaction Report - ${new Date(selectedDate).toLocaleDateString('en-GB')} | روزانہ رپورٹ</div>
+          <div class="date-header">
+            ${startDate === endDate 
+              ? `Daily Report - ${new Date(startDate).toLocaleDateString('en-GB')} | روزانہ رپورٹ`
+              : `Report: ${startDate ? new Date(startDate).toLocaleDateString('en-GB') : 'Start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-GB') : 'End'} | رپورٹ`
+            }
+          </div>
           
           <table>
             <thead>
@@ -745,6 +750,23 @@ function App() {
     } catch (error) {
       console.error('Error updating customer:', error);
       alert('❌ Failed to update customer. Please try again.');
+    }
+  };
+
+  // Delete Customer
+  const handleDeleteCustomer = async (id, name) => {
+    if (window.confirm(`⚠️ Are you sure you want to delete customer "${name}"?\n\nThis will also delete all their transactions and entries. This action cannot be undone!`)) {
+      try {
+        await api.deleteCustomer(id);
+        loadCustomers();
+        loadPendingEntries();
+        loadTransactions();
+        alert('✅ Customer deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        const errorMessage = error.response?.data?.message || 'Failed to delete customer. Please try again.';
+        alert(`❌ ${errorMessage}`);
+      }
     }
   };
 
@@ -1246,24 +1268,43 @@ function App() {
             <div>
               <h2>Completed Transactions ({transactions.length})</h2>
               
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                <input 
-                  type="date" 
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    fontWeight: 'bold'
-                  }}
-                />
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                  <label style={{ fontWeight: 'bold', whiteSpace: 'nowrap', color: '#374151' }}>From:</label>
+                  <input 
+                    type="date" 
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                  <label style={{ fontWeight: 'bold', whiteSpace: 'nowrap', color: '#374151' }}>To:</label>
+                  <input 
+                    type="date" 
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                </div>
                 <button
-                  onClick={() => setSelectedDate('')}
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
                   style={{
-                    padding: '12px 20px',
+                    padding: '10px 16px',
                     backgroundColor: '#6b7280',
                     color: 'white',
                     border: 'none',
@@ -1342,7 +1383,7 @@ function App() {
 
               {filteredTransactions.length === 0 ? (
                 <p style={{ textAlign: 'center', color: '#6b7280', padding: '20px' }}>
-                  {completedSearch || selectedDate ? 'No transactions found matching your search/date.' : 'No completed transactions.'}
+                  {completedSearch || startDate || endDate ? 'No transactions found matching your search/date range.' : 'No completed transactions.'}
                 </p>
               ) : (
                 <>
@@ -1450,28 +1491,54 @@ function App() {
                     <h3>{cust.name}</h3>
                     <div>Truck: {cust.truckNumber} | Contact: {cust.contactNumber}</div>
                     <div>Balance: <strong className={cust.balance > 0 ? 'text-red' : 'text-green'}>PKR {cust.balance}</strong> | Trips: {cust.totalTransactions}</div>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditCustomer(cust);
-                      }}
-                      style={{
-                        backgroundColor: '#f59e0b',
-                        color: 'white',
-                        padding: '8px 16px',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginTop: '10px'
-                      }}
-                    >
-                      <Edit size={16} /> Edit Customer
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCustomer(cust);
+                        }}
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Edit size={16} /> Edit Customer
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCustomer(cust._id, cust.name);
+                        }}
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#dc2626',
+                          color: 'white',
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Trash2 size={16} /> Delete
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
