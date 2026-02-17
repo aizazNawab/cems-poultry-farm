@@ -59,3 +59,6 @@ export const updateTransaction = (id, data) => {
 export const deleteTransaction = (id) => {
   return axios.delete(`${API_URL}/transactions/${id}`);
 };
+export const deleteCustomer = (id) => {
+  return axios.delete(`${API_URL}/customers/${id}`);
+};
